@@ -60,7 +60,7 @@
     method: "3",
     today: null,          // { dateStr, timings: {Fajr:"04:15",...} }
     tomorrow: null,
-    format24: false,
+    format24: true,
     timer: null
   };
 

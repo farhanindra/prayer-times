@@ -3,7 +3,7 @@
 const PT_TWEAK_DEFAULTS = /*EDITMODE-BEGIN*/{
   "accent": "#5b7b66",
   "tone": "warm",
-  "timeFormat": "12h"
+  "timeFormat": "24h"
 }/*EDITMODE-END*/;
 
 function hexToRgba(hex, a) {
