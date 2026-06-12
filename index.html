@@ -33,7 +33,9 @@
     </div>
 
     <!-- main view -->
-    <div id="main" style="display: none; flex-direction: column; flex: 1;">
+    <div id="main" style="display: none; flex-direction: column; flex: 1; position: relative;">
+      <button class="gear-btn" id="gearBtn" aria-label="Calculation method">⚙</button>
+      <div class="gear-popover" id="gearPopover"></div>
       <header class="topbar">
         <button class="loc-btn" id="locBtn" title="Change location">
           <span class="loc-dot"></span>
@@ -44,18 +46,7 @@
 
       <section class="times" id="times"></section>
 
-      <footer class="settings">
-        <div class="settings-col">
-          <div class="method-line">
-            <label class="method-wrap">
-              <span>Calculation</span>
-              <select id="methodSelect"></select>
-            </label>
-            <button class="info-btn" id="infoBtn" title="Which method should I choose?" aria-label="About calculation methods">?</button>
-          </div>
-          <div class="method-hint" id="methodHint" style="display: none;"></div>
-        </div>
-      </footer>
+      <select id="methodSelect" style="display:none"></select>
     </div>
   </div>
 

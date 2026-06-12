@@ -412,19 +412,47 @@
 
   /* ---------- settings ---------- */
   function buildMethodSelect() {
-    METHODS.forEach(function (m) {
-      var o = document.createElement("option");
-      o.value = m.id;
-      o.textContent = m.label;
-      els.methodSelect.appendChild(o);
-    });
     els.methodSelect.value = state.method;
-    els.methodSelect.addEventListener("change", function () {
-      state.method = els.methodSelect.value;
-      dismissSuggestion();
-      save();
-      load();
+  }
+
+  function buildGearPopover() {
+    var pop = $("gearPopover");
+    pop.innerHTML = "";
+    var s = suggestedMethod();
+    METHODS.forEach(function (m) {
+      var b = document.createElement("button");
+      b.className = "gear-item" + (m.id === state.method ? " active" : "");
+      var name = document.createElement("span");
+      name.className = "gear-item-name";
+      name.textContent = m.label;
+      if (s && s.method && s.method.id === m.id && m.id !== state.method) {
+        var tag = document.createElement("span");
+        tag.className = "tag";
+        tag.textContent = "Suggested";
+        name.appendChild(tag);
+      }
+      b.appendChild(name);
+      b.addEventListener("click", function () {
+        state.method = m.id;
+        els.methodSelect.value = m.id;
+        dismissSuggestion();
+        save();
+        closeGearPopover();
+        load();
+      });
+      pop.appendChild(b);
     });
+  }
+
+  function openGearPopover() {
+    buildGearPopover();
+    $("gearPopover").classList.add("open");
+    $("gearBtn").classList.add("active");
+  }
+
+  function closeGearPopover() {
+    $("gearPopover").classList.remove("open");
+    $("gearBtn").classList.remove("active");
   }
 
   /* ---------- method suggestion ---------- */
@@ -438,44 +466,9 @@
     if (state.loc && state.loc.cc) {
       try { localStorage.setItem("pt_suggest_dismissed", state.loc.cc); } catch (e) { /* ignore */ }
     }
-    var hint = $("methodHint");
-    if (hint) hint.style.display = "none";
   }
 
-  function maybeSuggest() {
-    var hint = $("methodHint");
-    if (!hint) return;
-    var s = suggestedMethod();
-    var dismissed = "";
-    try { dismissed = localStorage.getItem("pt_suggest_dismissed") || ""; } catch (e) { /* ignore */ }
-    if (!s || !s.method || s.method.id === state.method || dismissed === s.cc) {
-      hint.style.display = "none";
-      return;
-    }
-    hint.innerHTML = "";
-    var txt = document.createElement("span");
-    txt.className = "hint-text";
-    txt.textContent = "In " + countryName(s.cc) + ", most follow " + s.method.label + ".";
-    var apply = document.createElement("button");
-    apply.className = "hint-apply";
-    apply.textContent = "Use it";
-    apply.addEventListener("click", function () {
-      state.method = s.method.id;
-      els.methodSelect.value = state.method;
-      dismissSuggestion();
-      save();
-      load();
-    });
-    var close = document.createElement("button");
-    close.className = "hint-close";
-    close.setAttribute("aria-label", "Dismiss suggestion");
-    close.textContent = "\u00d7";
-    close.addEventListener("click", dismissSuggestion);
-    hint.appendChild(txt);
-    hint.appendChild(apply);
-    hint.appendChild(close);
-    hint.style.display = "flex";
-  }
+  function maybeSuggest() { }
 
   /* ---------- method info sheet ---------- */
   function openInfoSheet() {
@@ -532,10 +525,16 @@
     buildMethodSelect();
 
     $("locBtn").addEventListener("click", openSheet);
-    $("infoBtn").addEventListener("click", openInfoSheet);
-    $("infoCancel").addEventListener("click", function () {
-      $("infoSheet").classList.remove("open");
+    $("gearBtn").addEventListener("click", function (e) {
+      e.stopPropagation();
+      if ($("gearPopover").classList.contains("open")) {
+        closeGearPopover();
+      } else {
+        openGearPopover();
+      }
     });
+    document.addEventListener("click", function () { closeGearPopover(); });
+    $("gearPopover").addEventListener("click", function (e) { e.stopPropagation(); });
     $("sheetCancel").addEventListener("click", closeSheet);
     $("useGps").addEventListener("click", function () {
       els.sheet.classList.remove("open");
