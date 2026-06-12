@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="warm">
+<head>
+  <meta charset="UTF-8"></meta>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"></meta>
+  <title>Prayer Times</title>
+
+  <!-- PWA / installable web app -->
+  <link rel="manifest" href="manifest.webmanifest"></link>
+  <meta name="theme-color" content="#5e7c69" media="(prefers-color-scheme: light)"></meta>
+  <meta name="theme-color" content="#161511" media="(prefers-color-scheme: dark)"></meta>
+  <meta name="mobile-web-app-capable" content="yes"></meta>
+  <!-- iOS standalone -->
+  <meta name="apple-mobile-web-app-capable" content="yes"></meta>
+  <meta name="apple-mobile-web-app-status-bar-style" content="default"></meta>
+  <meta name="apple-mobile-web-app-title" content="Prayer Times"></meta>
+  <link rel="apple-touch-icon" href="app-icon-180.png"></link>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com"></link>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous"></link>
+  <link href="https://fonts.googleapis.com/css2?family=Jost:wght@200;300;400;500&amp;family=Amiri:wght@400;700&amp;display=swap" rel="stylesheet"></link>
+  <link rel="stylesheet" href="prayer-styles.css"></link>
+</head>
+<body>
+  <div class="shell" data-screen-label="Prayer Times">
+
+    <!-- loading / error states -->
+    <div class="status" id="status">
+      <div class="pulse"></div>
+      <div class="msg" id="statusMsg">Finding your location…</div>
+      <div class="sub" id="statusSub"></div>
+      <div class="actions" id="statusActions"></div>
+    </div>
+
+    <!-- main view -->
+    <div id="main" style="display: none; flex-direction: column; flex: 1;">
+      <header class="topbar">
+        <button class="loc-btn" id="locBtn" title="Change location">
+          <span class="loc-dot"></span>
+          <span class="loc-name" id="locName">Your location</span>
+        </button>
+        <div class="date-line" id="dateLine"></div>
+      </header>
+
+      <section class="hero">
+        <div class="hero-label">Next prayer</div>
+        <div class="hero-name" id="heroName"></div>
+        <div class="hero-at" id="heroAt"></div>
+        <div class="progress"><div class="bar" id="progressBar"></div></div>
+      </section>
+
+      <section class="times" id="times"></section>
+
+      <footer class="settings">
+        <div class="settings-col">
+          <div class="method-line">
+            <label class="method-wrap">
+              <span>Calculation</span>
+              <select id="methodSelect"></select>
+            </label>
+            <button class="info-btn" id="infoBtn" title="Which method should I choose?" aria-label="About calculation methods">?</button>
+          </div>
+          <div class="method-hint" id="methodHint" style="display: none;"></div>
+        </div>
+      </footer>
+    </div>
+  </div>
+
+  <!-- city search sheet -->
+  <div class="sheet" id="sheet">
+    <div class="sheet-inner">
+      <div class="sheet-head">
+        <input type="text" id="searchInput" placeholder="Search for a city…" autocomplete="off"></input>
+        <button class="sheet-cancel" id="sheetCancel">Cancel</button>
+      </div>
+      <button class="use-gps" id="useGps">
+        <span class="loc-dot" style="width: 6px; height: 6px; border-radius: 50%; background: currentColor;"></span>
+        Use my current location
+      </button>
+      <div class="results" id="results"></div>
+    </div>
+  </div>
+
+  <!-- calculation method guide sheet -->
+  <div class="sheet" id="infoSheet">
+    <div class="sheet-inner">
+      <div class="sheet-head">
+        <div class="sheet-title">Calculation methods</div>
+        <button class="sheet-cancel" id="infoCancel">Close</button>
+      </div>
+      <p class="info-intro">Prayer times vary slightly depending on how dawn and dusk are calculated. The best choice is whatever your local mosque follows — if you’re unsure, pick the method commonly used in your country. Tap one to use it.</p>
+      <div class="results" id="infoList"></div>
+    </div>
+  </div>
+
+  <!-- iOS "Add to Home Screen" hint -->
+  <div class="a2hs" id="a2hs">
+    <div class="a2hs-card">
+      <img src="app-icon-180.png" alt="" class="a2hs-icon"></img>
+      <div class="a2hs-body">
+        <div class="a2hs-title">Add to your Home Screen</div>
+        <div class="a2hs-text">Tap <span class="a2hs-share" aria-hidden="true"></span> Share, then <strong>Add to Home Screen</strong> for a full-screen app.</div>
+      </div>
+      <button class="a2hs-close" id="a2hsClose" aria-label="Dismiss">×</button>
+    </div>
+  </div>
+
+  <script src="prayer-app.js"></script>
+
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  <script type="text/babel" src="tweaks-panel.jsx"></script>
+  <script type="text/babel" src="prayer-tweaks.jsx"></script>
+
+  <script>
+    // Register service worker for offline use
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", function () {
+        navigator.serviceWorker.register("service-worker.js").catch(function () {});
+      });
+    }
+
+    // iOS "Add to Home Screen" hint — show once, only in Safari (not already installed)
+    (function () {
+      var ua = window.navigator.userAgent;
+      var isIOS = /iPhone|iPad|iPod/.test(ua) ||
+        (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+      var standalone = ("standalone" in navigator && navigator.standalone) ||
+        window.matchMedia("(display-mode: standalone)").matches;
+      var dismissed = false;
+      try { dismissed = localStorage.getItem("pt_a2hs_dismissed") === "1"; } catch (e) {}
+      var banner = document.getElementById("a2hs");
+      function hide() {
+        banner.classList.remove("show");
+        try { localStorage.setItem("pt_a2hs_dismissed", "1"); } catch (e) {}
+      }
+      document.getElementById("a2hsClose").addEventListener("click", hide);
+      if (isIOS && !standalone && !dismissed) {
+        setTimeout(function () { banner.classList.add("show"); }, 2600);
+        setTimeout(hide, 14000);
+      }
+    })();
+  </script>
+</body>
+</html>
