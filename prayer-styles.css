@@ -181,7 +181,6 @@ body {
   align-items: center;
   gap: 12px;
   padding: 16px 14px;
-  border-radius: 14px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -249,9 +248,9 @@ body {
 
 .row.current .dot { background: var(--accent); }
 
-.row.current .name-en { font-weight: 600; }
+.row.current .name-en { font-weight: 600; font-size: 18px; }
 
-.row.current .time { color: var(--accent); }
+.row.current .time { color: var(--accent); font-size: 28px; }
 
 :root[data-theme="night"] .row.current .time { color: var(--ink); }
 

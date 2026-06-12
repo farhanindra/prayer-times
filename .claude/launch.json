@@ -1,0 +1,12 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "prayer-times",
+      "runtimeExecutable": "npx",
+      "runtimeArgs": ["serve", "-l", "8000", "."],
+      "port": 8000,
+      "autoPort": false
+    }
+  ]
+}

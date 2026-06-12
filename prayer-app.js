@@ -68,7 +68,7 @@
   var $ = function (id) { return document.getElementById(id); };
   var els = {};
   ["status", "statusMsg", "statusSub", "statusActions", "main", "locName",
-   "dateLine", "heroName", "heroAt", "progressBar", "times",
+   "dateLine", "times",
    "methodSelect", "sheet", "searchInput", "results"].forEach(function (k) {
     els[k] = $(k);
   });
@@ -297,27 +297,6 @@
     if (nowDate !== state.today.dateStr) { load(); return; }
 
     var c = computeNext();
-    var f = fmtTime(c.next.at);
-    els.heroName.innerHTML = "";
-    var en = document.createTextNode(c.next.key + " ");
-    var dotSep = document.createElement("span");
-    dotSep.style.color = "var(--muted)";
-    dotSep.textContent = "· ";
-    var ar = document.createElement("span");
-    ar.className = "ar";
-    ar.setAttribute("lang", "ar");
-    ar.setAttribute("dir", "rtl");
-    ar.textContent = AR[c.next.key];
-    els.heroName.appendChild(en);
-    els.heroName.appendChild(dotSep);
-    els.heroName.appendChild(ar);
-
-    els.heroCount && (els.heroCount.textContent = "");
-    els.heroAt.textContent = "at " + f.t + (f.suffix ? " " + f.suffix : "") +
-      (c.next.tomorrow ? " · tomorrow" : "");
-
-    els.progressBar.style.width = c.progress !== null ? (c.progress * 100).toFixed(2) + "%" : "0%";
-
     var cdText = fmtCountdown(c.next.secs);
     var rows = els.times.querySelectorAll(".row");
     rows.forEach(function (r) {
