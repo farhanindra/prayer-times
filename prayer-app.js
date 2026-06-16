@@ -191,12 +191,27 @@
       renderAll();
       showMain();
       startTick();
+      prefetchWeek(tz);
     }).catch(function (e) {
       showStatus("Couldn’t load prayer times", "Please check your connection and try again.", [
         { label: "Retry", primary: true, onClick: load },
         { label: "Change city", onClick: openSheet }
       ]);
     });
+  }
+
+  function prefetchWeek(tz) {
+    // Silently pre-fetch days 2–7 so they're cached for offline use.
+    // Days 0 and 1 are already fetched by load().
+    for (var d = 2; d <= 7; d++) {
+      var dateStr = tzDateStr(tz, d);
+      var p = dateStr.split("-");
+      var ddmmyyyy = p[2] + "-" + p[1] + "-" + p[0];
+      var url = "https://api.aladhan.com/v1/timings/" + ddmmyyyy +
+        "?latitude=" + state.loc.lat + "&longitude=" + state.loc.lng +
+        "&method=" + state.method;
+      fetch(url).catch(function () {});
+    }
   }
 
   /* ---------- rendering ---------- */

@@ -1,5 +1,6 @@
 /* Prayer Times — offline service worker */
-const CACHE = "prayer-times-v10";
+const CACHE = "prayer-times-v11";
+const DATA_CACHE = "prayer-data-v1";
 const ASSETS = [
   "index.html",
   "prayer-styles.css",
@@ -21,7 +22,7 @@ self.addEventListener("install", (e) => {
 self.addEventListener("activate", (e) => {
   e.waitUntil(
     caches.keys().then((keys) =>
-      Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))
+      Promise.all(keys.filter((k) => k !== CACHE && k !== DATA_CACHE).map((k) => caches.delete(k)))
     ).then(() => self.clients.claim())
   );
 });
@@ -31,8 +32,20 @@ self.addEventListener("fetch", (e) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
 
-  // Live prayer-time + geocoding APIs: always go to network (data must be fresh).
-  const isApi = /aladhan\.com|open-meteo\.com|openstreetmap\.org/.test(url.hostname);
+  // Prayer-time API: network first, cache response on success, serve cache if offline.
+  if (/aladhan\.com/.test(url.hostname)) {
+    e.respondWith(
+      fetch(req).then((res) => {
+        const copy = res.clone();
+        caches.open(DATA_CACHE).then((c) => c.put(req, copy)).catch(() => {});
+        return res;
+      }).catch(() => caches.match(req))
+    );
+    return;
+  }
+
+  // Other APIs (geocoding): network only, fall back to cache.
+  const isApi = /open-meteo\.com|openstreetmap\.org/.test(url.hostname);
   if (isApi) {
     e.respondWith(fetch(req).catch(() => caches.match(req)));
     return;
