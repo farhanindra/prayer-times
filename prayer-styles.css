@@ -173,8 +173,12 @@ body {
 .times {
   display: flex;
   flex-direction: column;
-  margin-top: auto;
-  margin-bottom: auto;
+  flex: 1;
+  padding: 24px 0;
+}
+
+.times .row {
+  flex: 1;
 }
 
 .row {
@@ -182,27 +186,24 @@ body {
   align-items: center;
   gap: 12px;
   padding: 16px 14px;
+  padding-left: 14px;
   border-bottom: 1px solid var(--line);
 }
 
 .row:last-child { border-bottom: none; }
 
 .row .dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: transparent;
-  flex: none;
+  display: none;
 }
 
 .row .name-en {
-  font-size: 15px;
+  font-size: 21px;
   letter-spacing: 0.01em;
 }
 
 .row .name-ar {
   font-family: var(--arabic);
-  font-size: 17px;
+  font-size: 23px;
   color: var(--muted);
   margin-inline-start: 10px;
 }
@@ -210,7 +211,7 @@ body {
 .row .countdown {
   margin-left: auto;
   font-family: var(--serif);
-  font-size: 17px;
+  font-size: 21px;
   font-weight: 400;
   color: var(--accent);
   font-variant-numeric: tabular-nums;
@@ -226,7 +227,7 @@ body {
 .row .time {
   margin-left: auto;
   font-family: var(--serif);
-  font-size: 20px;
+  font-size: 21px;
   font-weight: 400;
   font-variant-numeric: tabular-nums;
 }
@@ -247,11 +248,11 @@ body {
   border-bottom-color: transparent;
 }
 
-.row.current .dot { background: var(--accent); }
 
-.row.current .name-en { font-weight: 600; font-size: 18px; }
 
-.row.current .time { color: var(--accent); font-size: 28px; }
+.row.current .name-en { font-weight: 600; font-size: 32px; }
+
+.row.current .time { color: var(--accent); font-size: 32px; }
 
 :root[data-theme="night"] .row.current .time { color: var(--ink); }
 
