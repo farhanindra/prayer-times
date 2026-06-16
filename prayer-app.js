@@ -535,9 +535,159 @@
     }
   });
 
+  /* ---------- qibla compass ---------- */
+  function calcQiblaBearing(lat, lng) {
+    // Great-circle bearing from user's position to Mecca (21.4225, 39.8262)
+    var mLat = 21.4225 * Math.PI / 180;
+    var mLng = 39.8262 * Math.PI / 180;
+    var uLat = lat * Math.PI / 180;
+    var uLng = lng * Math.PI / 180;
+    var dLng = mLng - uLng;
+    var x = Math.sin(dLng) * Math.cos(mLat);
+    var y = Math.cos(uLat) * Math.sin(mLat) - Math.sin(uLat) * Math.cos(mLat) * Math.cos(dLng);
+    var bearing = Math.atan2(x, y) * 180 / Math.PI;
+    return (bearing + 360) % 360;
+  }
+
+  function cardinalDir(deg) {
+    var dirs = ["N", "NE", "E", "SE", "S", "SW", "W", "NW"];
+    return dirs[Math.round(deg / 45) % 8];
+  }
+
+  var qiblaState = {
+    bearing: null,
+    heading: null,
+    watching: false,
+    permissionGranted: false
+  };
+
+  function showQiblaView() {
+    $("main").style.display = "none";
+    $("qiblaView").style.display = "flex";
+    if (state.loc) {
+      qiblaState.bearing = calcQiblaBearing(state.loc.lat, state.loc.lng);
+      $("qiblaDegrees").textContent = Math.round(qiblaState.bearing) + "° " + cardinalDir(qiblaState.bearing);
+    }
+    initCompassTicks();
+    startCompass();
+  }
+
+  function hideQiblaView() {
+    $("qiblaView").style.display = "none";
+    $("main").style.display = "flex";
+    stopCompass();
+  }
+
+  function initCompassTicks() {
+    var ticks = $("compassTicks");
+    if (ticks.children.length > 0) return;
+    for (var i = 0; i < 72; i++) {
+      var angle = i * 5;
+      var isMajor = angle % 30 === 0;
+      var len = isMajor ? 10 : 5;
+      var r1 = 140 - len;
+      var r2 = 140;
+      var rad = angle * Math.PI / 180;
+      var x1 = 150 + r1 * Math.sin(rad);
+      var y1 = 150 - r1 * Math.cos(rad);
+      var x2 = 150 + r2 * Math.sin(rad);
+      var y2 = 150 - r2 * Math.cos(rad);
+      var line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+      line.setAttribute("x1", x1);
+      line.setAttribute("y1", y1);
+      line.setAttribute("x2", x2);
+      line.setAttribute("y2", y2);
+      line.setAttribute("stroke", isMajor ? "var(--muted)" : "var(--line)");
+      line.setAttribute("stroke-width", isMajor ? "1.5" : "1");
+      ticks.appendChild(line);
+    }
+  }
+
+  function startCompass() {
+    var hint = $("qiblaHint");
+    var btn = $("qiblaEnableBtn");
+
+    if (typeof DeviceOrientationEvent !== "undefined" &&
+        typeof DeviceOrientationEvent.requestPermission === "function") {
+      // iOS — needs user gesture to request permission
+      if (!qiblaState.permissionGranted) {
+        hint.textContent = "Compass access is needed to show the Qibla direction.";
+        btn.style.display = "inline-block";
+        btn.onclick = function () {
+          DeviceOrientationEvent.requestPermission().then(function (perm) {
+            if (perm === "granted") {
+              qiblaState.permissionGranted = true;
+              btn.style.display = "none";
+              hint.textContent = "Point your phone to find the Qibla direction.";
+              listenOrientation();
+            } else {
+              hint.textContent = "Permission denied. Enable in Settings > Safari.";
+            }
+          }).catch(function () {
+            hint.textContent = "Could not request compass permission.";
+          });
+        };
+      } else {
+        btn.style.display = "none";
+        hint.textContent = "Point your phone to find the Qibla direction.";
+        listenOrientation();
+      }
+    } else if (typeof DeviceOrientationEvent !== "undefined") {
+      // Android / non-iOS — no permission needed
+      hint.textContent = "Point your phone to find the Qibla direction.";
+      btn.style.display = "none";
+      listenOrientation();
+    } else {
+      hint.textContent = "Compass not supported on this device.";
+      btn.style.display = "none";
+    }
+  }
+
+  function listenOrientation() {
+    if (qiblaState.watching) return;
+    qiblaState.watching = true;
+    window.addEventListener("deviceorientation", onOrientation);
+  }
+
+  function stopCompass() {
+    if (qiblaState.watching) {
+      window.removeEventListener("deviceorientation", onOrientation);
+      qiblaState.watching = false;
+    }
+  }
+
+  function onOrientation(e) {
+    var heading;
+    if (e.webkitCompassHeading !== undefined) {
+      // iOS: webkitCompassHeading is degrees from north (clockwise)
+      heading = e.webkitCompassHeading;
+    } else if (e.alpha !== null) {
+      // Android: alpha is degrees counter-clockwise from north
+      heading = (360 - e.alpha) % 360;
+    } else {
+      return;
+    }
+    qiblaState.heading = heading;
+    updateCompassUI(heading);
+  }
+
+  function updateCompassUI(heading) {
+    // Rotate the entire dial so that north aligns with real north
+    var dial = $("compassDial");
+    dial.style.transform = "rotate(" + (-heading) + "deg)";
+
+    // The qibla arrow is part of the dial, so position it at the bearing angle.
+    // Since the dial rotates with heading, we set arrow rotation to the static bearing.
+    var arrow = $("qiblaArrow");
+    arrow.setAttribute("transform", "rotate(" + qiblaState.bearing + " 150 150)");
+  }
+
   /* ---------- wire up ---------- */
   document.addEventListener("DOMContentLoaded", function () {
     buildMethodSelect();
+
+    $("compassBtn").addEventListener("click", showQiblaView);
+    $("qiblaBack").addEventListener("click", hideQiblaView);
 
     $("locBtn").addEventListener("click", openSheet);
     $("gearBtn").addEventListener("click", function (e) {

@@ -258,6 +258,50 @@ body {
 
 /* ---------- gear button & popover ---------- */
 
+.compass-btn {
+  position: absolute;
+  top: calc(20px + env(safe-area-inset-top));
+  left: 20px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, color 0.2s;
+  z-index: 10;
+}
+
+.compass-btn:hover { border-color: var(--accent); color: var(--accent); }
+
+.back-btn {
+  position: absolute;
+  top: calc(20px + env(safe-area-inset-top));
+  left: 20px;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  border: 1px solid var(--line);
+  background: transparent;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.2s, color 0.2s;
+  z-index: 10;
+}
+
+.back-btn:hover { border-color: var(--accent); color: var(--accent); }
+
 .gear-btn {
   position: absolute;
   top: calc(20px + env(safe-area-inset-top));
@@ -526,6 +570,74 @@ body {
   font-size: 13px;
   color: var(--muted);
   padding: 18px 6px;
+}
+
+/* ---------- qibla compass ---------- */
+
+.qibla-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  padding: 60px 24px 24px;
+  gap: 16px;
+}
+
+.qibla-label {
+  font-size: 11px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--muted);
+}
+
+.qibla-degrees {
+  font-family: var(--serif);
+  font-size: 28px;
+  font-weight: 300;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+
+.qibla-compass {
+  position: relative;
+  width: min(280px, 70vw);
+  height: min(280px, 70vw);
+  margin: 16px 0;
+}
+
+.compass-dial {
+  width: 100%;
+  height: 100%;
+  font-family: var(--sans);
+  transition: transform 0.15s ease-out;
+}
+
+.compass-center {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--surface);
+  border: 1px solid var(--line);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.qibla-hint {
+  font-size: 13px;
+  color: var(--muted);
+  text-align: center;
+  max-width: 240px;
+  line-height: 1.5;
+}
+
+.qibla-enable-btn {
+  margin-top: 8px;
 }
 
 /* ---------- responsive ---------- */

@@ -34,6 +34,12 @@
 
     <!-- main view -->
     <div id="main" style="display: none; flex-direction: column; flex: 1; position: relative;">
+      <button class="compass-btn" id="compassBtn" aria-label="Qibla compass">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76" fill="currentColor" stroke="none"/>
+        </svg>
+      </button>
       <button class="gear-btn" id="gearBtn" aria-label="Calculation method">⚙</button>
       <div class="gear-popover" id="gearPopover"></div>
       <header class="topbar">
@@ -47,6 +53,45 @@
       <section class="times" id="times"></section>
 
       <select id="methodSelect" style="display:none"></select>
+    </div>
+
+    <!-- qibla compass view -->
+    <div id="qiblaView" style="display: none; flex-direction: column; flex: 1; position: relative;">
+      <button class="back-btn" id="qiblaBack" aria-label="Back to prayer times">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polyline points="15 18 9 12 15 6"/>
+        </svg>
+      </button>
+      <div class="qibla-page">
+        <div class="qibla-label">Qibla</div>
+        <div class="qibla-degrees" id="qiblaDegrees">--°</div>
+        <div class="qibla-compass" id="qiblaCompass">
+          <svg id="compassDial" viewBox="0 0 300 300" class="compass-dial">
+            <!-- outer ring -->
+            <circle cx="150" cy="150" r="140" fill="none" stroke="var(--line)" stroke-width="1.5"/>
+            <!-- tick marks -->
+            <g id="compassTicks"></g>
+            <!-- cardinal letters -->
+            <text x="150" y="32" text-anchor="middle" font-size="14" font-weight="500" fill="var(--accent)">N</text>
+            <text x="272" y="155" text-anchor="middle" font-size="13" fill="var(--muted)">E</text>
+            <text x="150" y="278" text-anchor="middle" font-size="13" fill="var(--muted)">S</text>
+            <text x="28" y="155" text-anchor="middle" font-size="13" fill="var(--muted)">W</text>
+            <!-- qibla arrow -->
+            <g id="qiblaArrow">
+              <line x1="150" y1="150" x2="150" y2="40" stroke="var(--accent)" stroke-width="2.5" stroke-linecap="round"/>
+              <polygon points="150,28 143,46 157,46" fill="var(--accent)"/>
+            </g>
+          </svg>
+          <!-- center kaaba icon -->
+          <div class="compass-center">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="var(--accent)">
+              <rect x="6" y="6" width="12" height="12" rx="1"/>
+            </svg>
+          </div>
+        </div>
+        <div class="qibla-hint" id="qiblaHint">Tap to enable compass</div>
+        <button class="btn primary qibla-enable-btn" id="qiblaEnableBtn" style="display:none;">Enable Compass</button>
+      </div>
     </div>
   </div>
 
