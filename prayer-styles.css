@@ -250,7 +250,7 @@ body {
 
 
 
-.row.current .name-en { font-weight: 600; font-size: 32px; }
+.row.current .name-en { font-size: 32px; }
 
 .row.current .time { color: var(--accent); font-size: 32px; }
 
