@@ -68,7 +68,7 @@
         <div class="qibla-compass" id="qiblaCompass">
           <svg id="compassDial" viewBox="0 0 300 300" class="compass-dial">
             <!-- outer ring -->
-            <circle cx="150" cy="150" r="140" fill="none" stroke="var(--line)" stroke-width="1.5"/>
+            <circle id="compassRing" cx="150" cy="150" r="140" fill="none" stroke="var(--line)" stroke-width="1.5" style="transition: stroke-width 0.3s ease, stroke 0.3s ease;"/>
             <!-- tick marks -->
             <g id="compassTicks"></g>
             <!-- cardinal letters -->
@@ -84,9 +84,6 @@
           </svg>
           <!-- center kaaba icon -->
           <div class="compass-center">
-            <svg width="24" height="24" viewBox="0 0 24 24" fill="var(--accent)">
-              <rect x="6" y="6" width="12" height="12" rx="1"/>
-            </svg>
           </div>
         </div>
         <div class="qibla-hint" id="qiblaHint">Tap to enable compass</div>

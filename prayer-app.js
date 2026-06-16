@@ -677,9 +677,20 @@
     dial.style.transform = "rotate(" + (-heading) + "deg)";
 
     // The qibla arrow is part of the dial, so position it at the bearing angle.
-    // Since the dial rotates with heading, we set arrow rotation to the static bearing.
     var arrow = $("qiblaArrow");
     arrow.setAttribute("transform", "rotate(" + qiblaState.bearing + " 150 150)");
+
+    // Highlight outer ring when pointing toward Qibla (±5°)
+    var diff = Math.abs(heading - qiblaState.bearing);
+    if (diff > 180) diff = 360 - diff;
+    var ring = $("compassRing");
+    if (diff <= 5) {
+      ring.setAttribute("stroke-width", "10");
+      ring.setAttribute("stroke", "var(--accent)");
+    } else {
+      ring.setAttribute("stroke-width", "1.5");
+      ring.setAttribute("stroke", "var(--line)");
+    }
   }
 
   /* ---------- wire up ---------- */
