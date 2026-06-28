@@ -1,5 +1,5 @@
 /* Prayer Times — offline service worker */
-const CACHE = "prayer-times-v15";
+const CACHE = "prayer-times-v18";
 const DATA_CACHE = "prayer-data-v1";
 const ASSETS = [
   "index.html",

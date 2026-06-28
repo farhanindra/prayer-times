@@ -13,7 +13,183 @@
   var FIVE = ["Fajr", "Dhuhr", "Asr", "Maghrib", "Isha"];
   var AR = { Fajr: "الفجر", Dhuhr: "الظهر", Asr: "العصر", Maghrib: "المغرب", Isha: "العشاء" };
 
+  /* ---------- IZA Aachen API ---------- */
+  // Fetches prayer times from the IZA Aachen endpoint (full year, cached locally).
+  // Endpoint: POST https://prayer-times-api.izaachen.de/json
+
+  var IZA_API_URL = "https://prayer-times-api.izaachen.de/json";
+
+  function izaGetStandardOffset(tz) {
+    // Derive the standard (non-DST) UTC offset from a timezone string.
+    // Use January 1 which is always standard time in the northern hemisphere.
+    try {
+      var jan = new Date(2026, 0, 1, 12, 0, 0);
+      var utcStr = jan.toLocaleString("en-US", { timeZone: "UTC" });
+      var tzStr = jan.toLocaleString("en-US", { timeZone: tz });
+      return Math.round((new Date(tzStr) - new Date(utcStr)) / 3600000);
+    } catch (e) {
+      return 1; // default CET
+    }
+  }
+
+  function izaObservesDST(tz) {
+    // Check if a timezone observes DST by comparing Jan and Jul offsets.
+    try {
+      var jan = new Date(2026, 0, 1, 12, 0, 0);
+      var jul = new Date(2026, 6, 1, 12, 0, 0);
+      var utcJan = jan.toLocaleString("en-US", { timeZone: "UTC" });
+      var tzJan = jan.toLocaleString("en-US", { timeZone: tz });
+      var utcJul = jul.toLocaleString("en-US", { timeZone: "UTC" });
+      var tzJul = jul.toLocaleString("en-US", { timeZone: tz });
+      var offJan = (new Date(tzJan) - new Date(utcJan)) / 3600000;
+      var offJul = (new Date(tzJul) - new Date(utcJul)) / 3600000;
+      return offJan !== offJul;
+    } catch (e) {
+      return true;
+    }
+  }
+
+  function izaCacheKey(year, lat, lng) {
+    return "iza_api:" + year + ":" + lat.toFixed(4) + ":" + lng.toFixed(4);
+  }
+
+  function izaGetCachedYear(year, lat, lng) {
+    try {
+      var key = izaCacheKey(year, lat, lng);
+      var raw = localStorage.getItem(key);
+      if (!raw) return null;
+      return JSON.parse(raw);
+    } catch (e) {
+      return null;
+    }
+  }
+
+  function izaSetCachedYear(year, lat, lng, data) {
+    try {
+      var key = izaCacheKey(year, lat, lng);
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch (e) { /* storage full or unavailable */ }
+  }
+
+  function izaFetchYear(year, lat, lng, tz, cityLabel) {
+    var gmtDiff = izaGetStandardOffset(tz);
+    var dst = izaObservesDST(tz);
+    var body = {
+      taqdir_method: "new_method",
+      natural_motion_alignment_interpolation: true,
+      longest_day_check: true,
+      city: cityLabel || "City",
+      dst_deviation: dst,
+      fajr_no_taqdir: false,
+      gmt_diff_hours: gmtDiff,
+      latitude: lat,
+      longitude: lng,
+      observer_dst: dst,
+      year: year
+    };
+    return fetch(IZA_API_URL, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(body)
+    }).then(function (r) {
+      if (!r.ok) throw new Error("IZA API error " + r.status);
+      return r.json();
+    }).then(function (json) {
+      if (!json.times) throw new Error("IZA API: no times in response");
+      // Normalize into a flat lookup: { "YYYY-MM-DD": { Fajr, Sunrise, Dhuhr, Asr, Maghrib, Isha } }
+      var lookup = {};
+      for (var monthKey in json.times) {
+        var month = parseInt(monthKey, 10);
+        var days = json.times[monthKey];
+        for (var dayKey in days) {
+          var day = parseInt(dayKey, 10);
+          var d = days[dayKey];
+          var dateStr = year + "-" + (month < 10 ? "0" + month : month) + "-" + (day < 10 ? "0" + day : day);
+          // The API returns times in standard (non-DST) timezone.
+          // We need to add the DST offset for dates within the DST period.
+          var dstExtra = 0;
+          if (dst) {
+            dstExtra = izaIsDST(year, month, day, tz) ? 60 : 0;
+          }
+          lookup[dateStr] = {
+            Fajr: izaAddMinutes(d.p1.t, dstExtra),
+            Sunrise: izaAddMinutes(d.p2.t, dstExtra),
+            Dhuhr: izaAddMinutes(d.p3.t, dstExtra),
+            Asr: izaAddMinutes(d.p4.t, dstExtra),
+            Maghrib: izaAddMinutes(d.p5.t, dstExtra),
+            Isha: izaAddMinutes(d.p6.t, dstExtra)
+          };
+        }
+      }
+      izaSetCachedYear(year, lat, lng, lookup);
+      return lookup;
+    });
+  }
+
+  function izaIsDST(year, month, day, tz) {
+    // Check if a specific date is in DST by comparing its offset to the January offset
+    try {
+      var jan = new Date(year, 0, 1, 12, 0, 0);
+      var target = new Date(year, month - 1, day, 12, 0, 0);
+      var utcJan = jan.toLocaleString("en-US", { timeZone: "UTC" });
+      var tzJan = jan.toLocaleString("en-US", { timeZone: tz });
+      var offJan = (new Date(tzJan) - new Date(utcJan)) / 3600000;
+      var utcTarget = target.toLocaleString("en-US", { timeZone: "UTC" });
+      var tzTarget = target.toLocaleString("en-US", { timeZone: tz });
+      var offTarget = (new Date(tzTarget) - new Date(utcTarget)) / 3600000;
+      return offTarget > offJan;
+    } catch (e) {
+      return false;
+    }
+  }
+
+  function izaAddMinutes(hhmm, minutes) {
+    if (!minutes) return hhmm;
+    var parts = hhmm.split(":");
+    var total = parseInt(parts[0], 10) * 60 + parseInt(parts[1], 10) + minutes;
+    if (total < 0) total += 1440;
+    total = total % 1440;
+    var hh = Math.floor(total / 60);
+    var mm = total % 60;
+    return (hh < 10 ? "0" + hh : "" + hh) + ":" + (mm < 10 ? "0" + mm : "" + mm);
+  }
+
+  // In-memory store for the current year's IZA data
+  var izaYearCache = null;
+  var izaYearCacheKey = "";
+
+  function izaGetDay(dateYMD, lat, lng, tz, cityLabel) {
+    var parts = dateYMD.split("-");
+    var year = parseInt(parts[0], 10);
+    var cacheId = izaCacheKey(year, lat, lng);
+
+    // Check in-memory cache first
+    if (izaYearCache && izaYearCacheKey === cacheId) {
+      var timings = izaYearCache[dateYMD];
+      if (timings) return Promise.resolve({ dateStr: dateYMD, timings: timings });
+    }
+
+    // Check localStorage cache
+    var cached = izaGetCachedYear(year, lat, lng);
+    if (cached) {
+      izaYearCache = cached;
+      izaYearCacheKey = cacheId;
+      var timings = cached[dateYMD];
+      if (timings) return Promise.resolve({ dateStr: dateYMD, timings: timings });
+    }
+
+    // Fetch from API
+    return izaFetchYear(year, lat, lng, tz, cityLabel).then(function (lookup) {
+      izaYearCache = lookup;
+      izaYearCacheKey = cacheId;
+      var timings = lookup[dateYMD];
+      if (!timings) throw new Error("IZA API: date " + dateYMD + " not found in response");
+      return { dateStr: dateYMD, timings: timings };
+    });
+  }
+
   var METHODS = [
+    { id: "iza", label: "Islamic Center Aachen (IZA)", desc: "Fajr −18°, Isha −17°, astronomical night-third method (via IZA API)." },
     { id: "3", label: "Muslim World League", desc: "Widely used across Europe and much of the world — a safe default." },
     { id: "2", label: "ISNA (North America)", desc: "Common across the United States and Canada." },
     { id: "4", label: "Umm al-Qura, Makkah", desc: "The official method in Saudi Arabia." },
@@ -35,7 +211,7 @@
   // Typical method by country — used to suggest a sensible choice.
   var COUNTRY_METHOD = {
     SA: "4", EG: "5", SD: "5", LY: "5", SY: "5", LB: "5",
-    TR: "13", DE: "13", US: "2", CA: "2",
+    TR: "13", DE: "iza", US: "2", CA: "2",
     PK: "1", IN: "1", BD: "1", AF: "1",
     FR: "12", AE: "8", OM: "8", BH: "8",
     KW: "9", QA: "10", SG: "11",
@@ -162,6 +338,12 @@
 
   /* ---------- data ---------- */
   function fetchDay(dateYMD) {
+    // IZA method: fetch from IZA Aachen API (full year cached)
+    if (state.method === "iza") {
+      var tz = state.loc.tz || Intl.DateTimeFormat().resolvedOptions().timeZone;
+      return izaGetDay(dateYMD, state.loc.lat, state.loc.lng, tz, state.loc.label);
+    }
+
     var p = dateYMD.split("-"); // YYYY-MM-DD
     var ddmmyyyy = p[2] + "-" + p[1] + "-" + p[0];
     var url = "https://api.aladhan.com/v1/timings/" + ddmmyyyy +
@@ -191,7 +373,7 @@
       renderAll();
       showMain();
       startTick();
-      prefetchWeek(tz);
+      if (state.method !== "iza") prefetchWeek(tz);
     }).catch(function (e) {
       showStatus("Couldn’t load prayer times", "Please check your connection and try again.", [
         { label: "Retry", primary: true, onClick: load },
@@ -284,13 +466,12 @@
     }
 
     if (!next) {
-      // after Isha → tomorrow's Fajr
-      var tf = toSecs(state.tomorrow.timings.Fajr);
-      next = { key: "Fajr", secs: 86400 - now + tf, at: state.tomorrow.timings.Fajr, tomorrow: true };
-      prevTime = toSecs(state.today.timings.Isha);
+      // after Isha, before midnight → no countdown, day is complete
       current = "Isha";
+      next = { key: null, secs: 0, at: null };
+      prevTime = null;
     } else if (next.key === "Fajr") {
-      // between midnight and Fajr → still Isha period
+      // between midnight and Fajr → countdown to Fajr
       current = "Isha";
       prevTime = null;
     }
